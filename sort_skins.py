@@ -1,32 +1,30 @@
-"""
-The Purpose of this script is to filter the png files in the source directory into the project image directories.
-Files that do not appear to match the v18 Standard or Slim format are moved to other.
-"""
-import glob
-import os
+"""Move skins with insufficient head colour variation to the other directory."""
 
-from PIL import Image
+from pathlib import Path
+
 import numpy as np
+from numpy.typing import NDArray
+from PIL import Image
 
-def main():
-    file_list = glob.glob("images/skins/*.png")
-    for file in file_list:
-        skin_image = Image.open(file).convert('RGBA')
-        skin_array = np.asarray(skin_image)
-        head_array = skin_array[8:16, 0:32, :]
 
-        std_count = 0
-        if np.std(head_array[:, :, 0:1]) < 10:
-            std_count += 1
-        if np.std(head_array[:, :, 1:2]) < 10:
-            std_count += 1
-        if np.std(head_array[:, :, 2:3]) < 10:
-            std_count += 1
+def should_filter_skin(skin_array: NDArray[np.uint8]) -> bool:
+    """Apply the historical strict <10 threshold to each RGB head channel."""
+    head_array = skin_array[8:16, 0:32, :]
+    std_count = sum(np.std(head_array[:, :, channel : channel + 1]) < 10 for channel in range(3))
+    return bool(std_count > 1)
 
-        if std_count > 1:
-            os.rename(file, 'images/other/' + file.split('/')[-1])
 
-    print('done')
+def main(source_dir: Path | str = "images/skins", other_dir: Path | str = "images/other") -> None:
+    """Move matching PNGs, leaving their bytes unchanged."""
+    for file in Path(source_dir).glob("*.png"):
+        with Image.open(file) as skin_image:
+            skin_array = np.asarray(skin_image.convert("RGBA"))
+        if should_filter_skin(skin_array):
+            destination = Path(other_dir)
+            destination.mkdir(parents=True, exist_ok=True)
+            file.rename(destination / file.name)
+    print("done")
+
 
 if __name__ == "__main__":
     main()

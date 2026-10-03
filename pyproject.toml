@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "minecraft-skin-gan"
+version = "0.2.0"
+description = "Generative autoencoder for Minecraft 1.8 RGBA skins"
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+license = "MIT"
+dependencies = [
+  "numpy>=2.5.3", "pillow>=12.3.0", "scikit-learn>=1.9.1",
+  "matplotlib>=3.11.2", "keras>=3.15.1", "jax>=0.11.2", "jaxlib>=0.11.2",
+  "requests>=2.34.2", "progress>=1.6.1", "ImageHash>=4.3.2",
+  "h5py>=3.16.0",
+]
+
+[project.scripts]
+skin-gan = "minecraft_skin_gan.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=9.1.1", "pytest-cov>=7.1.0", "coverage>=7.16.2",
+  "ruff>=0.16.10", "ty==0.0.84", "hatchling==1.32.4",
+]
+
+[tool.hatch.build.targets.wheel]
+include = ["/create_skins_array.py", "/download_skins.py", "/generate_skin.py", "/remove_duplicates.py", "/simple_gan.py", "/sort_skins.py", "/minecraft_skin_gan"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/*.py", "/minecraft_skin_gan", "/pyproject.toml", "/uv.lock", "/.python-version", "/requirements-gpu.txt", "/README.md", "/LICENSE", "/tests", "/scripts", "/docs"]
+exclude = ["/docs/*GOTCHA.md", "/docs/*ATLAS.md", "/docs/modernization-plan.md", "/docs/roadmap-progress.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "PTH", "ASYNC"]
+ignore = ["E501"]
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["*.py", "scripts/*.py", "minecraft_skin_gan/**/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib", "--strict-config", "--strict-markers", "--cov", "--cov-branch", "--cov-report=term-missing", "--cov-report=json:artifacts/coverage.json", "--cov-report=xml:artifacts/coverage.xml", "--cov-fail-under=81"]
+
+[tool.coverage.run]
+source_pkgs = ["create_skins_array", "download_skins", "generate_skin", "remove_duplicates", "simple_gan", "sort_skins", "minecraft_skin_gan"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
